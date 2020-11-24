@@ -2,7 +2,7 @@
 # Makefile
 #
 # Author:
-# Copyright (c) 2020, Gaurav Kothari (gkothar1@binghamton.edu)
+# Copyright (c) 2020, Kamal Kumawat (kkumawa1@binghamton.edu)
 # State University of New York at Binghamton
  
 # Enables debug messages while compiling
@@ -24,7 +24,14 @@ APEX_OBJS:=file_parser.o apex_cpu.o main.o
 
 apex_sim: $(APEX_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
-
+simulate: apex_sim
+	./apex_sim ${file} simulate ${cycles}
+initialize:	apex_sim
+	./apex_sim ${file} initialize
+display:	apex_sim
+	./apex_sim ${file} display ${cycles} ${showMem}
+single_step:	apex_sim
+	./apex_sim ${file} single_step	
 %.o: %.c
 	$(COMPILE_DEBUG)$(CC) $(CFLAGS) -c -o $@ $<
 	$(COMPILE_DEBUG)echo "CC $<"

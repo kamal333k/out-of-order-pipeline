@@ -4,7 +4,7 @@
  * this file to add new instructions
  *
  * Author:
- * Copyright (c) 2020, Gaurav Kothari (gkothar1@binghamton.edu)
+ * Copyright (c) 2020, Kamal Kumawat (kkumawa1@binghamton.edu)
  * State University of New York at Binghamton
  */
 #include <assert.h>
@@ -49,9 +49,19 @@ set_opcode_str(const char *opcode_str)
         return OPCODE_ADD;
     }
 
+    if (strcmp(opcode_str, "ADDL") == 0)
+    {
+        return OPCODE_ADDL;
+    }
+
     if (strcmp(opcode_str, "SUB") == 0)
     {
         return OPCODE_SUB;
+    }
+
+    if (strcmp(opcode_str, "SUBL") == 0)
+    {
+        return OPCODE_SUBL;
     }
 
     if (strcmp(opcode_str, "MUL") == 0)
@@ -88,10 +98,24 @@ set_opcode_str(const char *opcode_str)
     {
         return OPCODE_LOAD;
     }
+    if (strcmp(opcode_str, "LDR") == 0)
+    {
+        return OPCODE_LDR;
+    }
 
     if (strcmp(opcode_str, "STORE") == 0)
     {
         return OPCODE_STORE;
+    }
+
+    if (strcmp(opcode_str, "STR") == 0)
+    {
+        return OPCODE_STR;
+    }
+
+    if (strcmp(opcode_str, "CMP") == 0)
+    {
+        return OPCODE_CMP;
     }
 
     if (strcmp(opcode_str, "BZ") == 0)
@@ -118,7 +142,7 @@ split_opcode_from_insn_string(char *buffer, char tokens[2][128])
 {
     int token_num = 0;
 
-    char *token = strtok(buffer, " ");
+    char *token = strtok(buffer, " \n");
 
     while (token != NULL)
     {
@@ -148,7 +172,7 @@ create_APEX_instruction(APEX_Instruction *ins, char *buffer)
     split_opcode_from_insn_string(buffer, top_level_tokens);
 
     char *token = strtok(top_level_tokens[1], ",");
-
+    
     while (token != NULL)
     {
         strcpy(tokens[token_num], token);
@@ -158,7 +182,6 @@ create_APEX_instruction(APEX_Instruction *ins, char *buffer)
 
     strcpy(ins->opcode_str, top_level_tokens[0]);
     ins->opcode = set_opcode_str(ins->opcode_str);
-
     switch (ins->opcode)
     {
         case OPCODE_ADD:
@@ -181,7 +204,8 @@ create_APEX_instruction(APEX_Instruction *ins, char *buffer)
             ins->imm = get_num_from_string(tokens[1]);
             break;
         }
-
+        case OPCODE_ADDL:
+        case OPCODE_SUBL:
         case OPCODE_LOAD:
         {
             ins->rd = get_num_from_string(tokens[0]);
@@ -189,12 +213,31 @@ create_APEX_instruction(APEX_Instruction *ins, char *buffer)
             ins->imm = get_num_from_string(tokens[2]);
             break;
         }
-
+        case OPCODE_CMP:
+        {
+            ins->rs1 = get_num_from_string(tokens[0]);
+            ins->rs2 = get_num_from_string(tokens[1]);
+            break;
+        }
         case OPCODE_STORE:
         {
             ins->rs1 = get_num_from_string(tokens[0]);
             ins->rs2 = get_num_from_string(tokens[1]);
             ins->imm = get_num_from_string(tokens[2]);
+            break;
+        }
+        case OPCODE_STR:
+        {
+            ins->rs1 = get_num_from_string(tokens[0]);
+            ins->rs2 = get_num_from_string(tokens[1]);
+            ins->rs3 = get_num_from_string(tokens[2]);
+            break;
+        }
+        case OPCODE_LDR:
+        {
+            ins->rd = get_num_from_string(tokens[0]);
+            ins->rs1 = get_num_from_string(tokens[1]);
+            ins->rs2 = get_num_from_string(tokens[2]);
             break;
         }
 

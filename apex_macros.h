@@ -3,7 +3,7 @@
  * Contains APEX cpu pipeline macros
  *
  * Author:
- * Copyright (c) 2020, Gaurav Kothari (gkothar1@binghamton.edu)
+ * Copyright (c) 2020, Kamal Kumawat (kkumawa1@binghamton.edu)
  * State University of New York at Binghamton
  */
 #ifndef _MACROS_H_
@@ -32,11 +32,23 @@
 #define OPCODE_BZ 0xa
 #define OPCODE_BNZ 0xb
 #define OPCODE_HALT 0xc
+#define OPCODE_STR 0xd
+#define OPCODE_LDR 0xe
+#define OPCODE_ADDL 0xf
+#define OPCODE_SUBL 0x10
+#define OPCODE_CMP 0x11
+#define OPCODE_NOP 0x12
+
+/* Variables used for registers status */
+#define VALID 1
+#define INVALID 0
 
 /* Set this flag to 1 to enable debug messages */
 #define ENABLE_DEBUG_MESSAGES 1
+#define DISABLE_DEBUG_MESSAGES 0
 
 /* Set this flag to 1 to enable cycle single-step mode */
 #define ENABLE_SINGLE_STEP 1
+#define DISABLE_SINGLE_STEP 0
 
 #endif

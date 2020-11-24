@@ -34,15 +34,20 @@ A template for 5 Stage APEX In-order Pipeline
 ```
  Run as follows:
 ```
- ./apex_sim <input_file_name>
+Initialize => 
+make file={input_file} initialize
+ 
+Simulate =>
+make file={input_file} simulate cycles={no. of cyles}
+
+Single Step =>
+make file={input_file} single_step
+
+display => [NOTE: showMem can accept addresses in array eg: make file=test.asm display cycles=50 showMem=8,9,1,4]
+make file={input_file} display cycles={no. of cyles} showMem={Data memory address (optional)}
 ```
 
 ## Author
 
- - Copyright (C) Gaurav Kothari (gkothar1@binghamton.edu)
+ - Copyright (C) Kamal Kumawat (kkumawa1@binghamton.edu)
  - State University of New York, Binghamton
-
-## Bugs
-
- - Please contact your TAs for any assistance or query
- - Report bugs at: gkothar1@binghamton.edu
