@@ -234,6 +234,55 @@ APEX_fetch(APEX_CPU *cpu)
     }
 }
 
+
+void initialize_rob(ROB *rob)
+{
+	rob->tail = -1;
+	rob->head = -1;
+}
+ 
+int is_rob_empty(ROB *rob)
+{
+	return (rob->tail==-1);
+}
+
+int is_rob_full(ROB *rob)
+{
+	return ((rob->tail+1)%ROB_SIZE == rob->head);
+}
+/* remove from head of rob */
+
+
+void remove_from_rob(ROB *rob)
+{
+	ROB_SLOT empty_slot;
+	
+	rob->slots[rob->head] = empty_slot;
+	
+	if(rob->tail == rob->head){	//delete the last element
+		// reset the head and tail of rob
+        rob->tail = -1;
+        rob->head = -1;
+    }else{
+		rob->head=(rob->head+1)%ROB_SIZE;
+    }
+}
+
+void add_into_rob(ROB *rob, ROB_SLOT inst)
+{
+	if(is_rob_empty(rob))
+	{
+		rob->tail=0;
+		rob->head=0;
+		rob->slots[0]=inst;
+	}
+	else
+	{
+		rob->tail=(rob->tail+1)%ROB_SIZE;
+		rob->slots[rob->tail] = inst;
+	}
+}
+
 /*
  * Decode Stage of APEX Pipeline
  *

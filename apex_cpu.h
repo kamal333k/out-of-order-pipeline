@@ -19,11 +19,45 @@ typedef struct WK_array
     int pc;
 } WK_array;
 
-typedef struct Arch_reg
+typedef struct REG_FILE
 {
     char status;
     int value;
-} Arch_reg;
+} REG_FILE;
+
+typedef struct R_TABLE_SLOT
+{
+    int arch_reg;
+    int phy_reg;
+    int src_bit;
+} R_TABLE_SLOT;
+
+typedef struct R_TABLE
+{
+    R_TABLE_SLOT entry[R_TABLE_SIZE];
+    int index;
+} R_TABLE;
+
+typedef struct ROB_SLOT
+{
+    char opcode_str[128];
+    char type[32];
+    int opcode;
+    int slod_id;
+    int phy_reg_add;
+    int status;
+    int pc;
+    int mem_add_ready;
+    int exception_code;
+    int index_phy_add;
+} ROB_SLOT;
+
+typedef struct ROB
+{
+    ROB_SLOT slots[ROB_SIZE];     /*  ROB Queue  */
+    int head;
+    int tail;
+} ROB;
 
 typedef struct APEX_Instruction
 {
@@ -35,6 +69,8 @@ typedef struct APEX_Instruction
     int rs3;
     int imm;
 } APEX_Instruction;
+
+
 
 /* Model of CPU stage latch */
 typedef struct CPU_Stage
@@ -61,10 +97,7 @@ typedef struct APEX_CPU
     int pc;                        /* Current program counter */
     int clock;                     /* Clock cycles elapsed */
     int insn_completed;            /* Instructions retired */
-    Arch_reg regs[REG_FILE_SIZE];       /* Integer register file */
-    WK_array wk_array[REG_FILE_SIZE];       /* Integer register file */
     int code_memory_size;          /* Number of instruction in the input file */
-    APEX_Instruction *code_memory; /* Code Memory */
     int data_memory[DATA_MEMORY_SIZE]; /* Data Memory */
     int single_step;               /* Wait for user input after every cycle */
     int zero_flag;                 /* {TRUE, FALSE} Used by BZ and BNZ to branch */
@@ -73,6 +106,11 @@ typedef struct APEX_CPU
     int should_stall;                   /* {TRUE, FALSE} Used by stages when stalling in progress */
     int simulation_enabled;
     int simulation_cycles;
+    
+    R_TABLE rename_table[R_TABLE_SIZE];     /*  Rename Table  */
+    REG_FILE regs[REG_FILE_SIZE];       /* Integer register file */
+    WK_array wk_array[REG_FILE_SIZE];       /* wk array */
+    APEX_Instruction *code_memory; /* Code Memory */
     /* Pipeline stages */
     CPU_Stage fetch;
     CPU_Stage decode;
@@ -86,4 +124,7 @@ APEX_CPU *APEX_cpu_init(const char *filename);
 APEX_CPU *initialize(const char *filename);
 void APEX_cpu_run(APEX_CPU *cpu);
 void APEX_cpu_stop(APEX_CPU *cpu);
+
+void remove_from_rob(ROB *rob);
+void add_into_rob(ROB *rob, ROB_SLOT inst);
 #endif
