@@ -23,19 +23,17 @@ typedef struct REG_FILE
 {
     char status;
     int value;
+    int allocated;
 } REG_FILE;
 
 typedef struct R_TABLE_SLOT
 {
-    int arch_reg;
     int phy_reg;
-    int src_bit;
 } R_TABLE_SLOT;
 
 typedef struct R_TABLE
 {
     R_TABLE_SLOT entry[R_TABLE_SIZE];
-    int index;
 } R_TABLE;
 
 typedef struct ROB_SLOT
@@ -58,6 +56,31 @@ typedef struct ROB
     int head;
     int tail;
 } ROB;
+
+typedef struct IQ_SLOT
+{
+    char opcode_str[128];
+    //char type[32];
+    int opcode;
+    int status;
+    int src1_bit;
+    int src2_bit;
+    int src1_val;
+    int src2_val;
+    int src1_tag;
+    int src2_tag;
+    int imm;
+    int dest_reg;
+} IQ_SLOT;
+
+typedef struct IQ
+{
+  IQ_SLOT slots[IQ_SIZE];
+  int head;
+  int tail;
+} IQ;
+
+
 
 typedef struct APEX_Instruction
 {
@@ -106,15 +129,18 @@ typedef struct APEX_CPU
     int should_stall;                   /* {TRUE, FALSE} Used by stages when stalling in progress */
     int simulation_enabled;
     int simulation_cycles;
-    
-    R_TABLE rename_table[R_TABLE_SIZE];     /*  Rename Table  */
+
+    R_TABLE rename_table;     /*  Rename Table  */
     REG_FILE regs[REG_FILE_SIZE];       /* Integer register file */
     WK_array wk_array[REG_FILE_SIZE];       /* wk array */
     APEX_Instruction *code_memory; /* Code Memory */
+    IQ issue_queue;
+
     /* Pipeline stages */
     CPU_Stage fetch;
     CPU_Stage decode;
-    CPU_Stage execute;
+    CPU_Stage intfu;
+    CPU_Stage mulfu;
     CPU_Stage memory;
     CPU_Stage writeback;
 } APEX_CPU;

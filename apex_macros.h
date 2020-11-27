@@ -24,6 +24,9 @@
 /* Size of ROB */
 #define ROB_SIZE 64
 
+/*Size of IQ*/
+#define IQ_SIZE 24
+
 /* Numeric OPCODE identifiers for instructions */
 #define OPCODE_ADD 0x0
 #define OPCODE_SUB 0x1

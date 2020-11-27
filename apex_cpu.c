@@ -154,10 +154,10 @@ static void
 print_data_mem(const APEX_CPU *cpu)
 {
     printf("----------------------------------------\n%s\n----------------------------------------\n", " STATE OF DATA MEMORY");
-    
+
     for (int i = 0; i < 10; ++i)
     {
-         
+
         printf("   MEM%-11d \t\t Data Value = %d\n", i,cpu->data_memory[i]);
     }
 
@@ -240,7 +240,7 @@ void initialize_rob(ROB *rob)
 	rob->tail = -1;
 	rob->head = -1;
 }
- 
+
 int is_rob_empty(ROB *rob)
 {
 	return (rob->tail==-1);
@@ -256,9 +256,9 @@ int is_rob_full(ROB *rob)
 void remove_from_rob(ROB *rob)
 {
 	ROB_SLOT empty_slot;
-	
+
 	rob->slots[rob->head] = empty_slot;
-	
+
 	if(rob->tail == rob->head){	//delete the last element
 		// reset the head and tail of rob
         rob->tail = -1;
@@ -280,6 +280,41 @@ void add_into_rob(ROB *rob, ROB_SLOT inst)
 	{
 		rob->tail=(rob->tail+1)%ROB_SIZE;
 		rob->slots[rob->tail] = inst;
+	}
+}
+
+
+/*Utitity Function for issue Queue*/
+void initialize_iq(IQ *iq)
+{
+	iq->tail = -1;
+	iq->head = -1;
+}
+
+int is_iq_empty(IQ *iq)
+{
+	return (iq->tail==-1);
+}
+
+int is_iq_full(IQ *iq)
+{
+	return ((iq->tail+1)%IQ_SIZE == iq->head);
+}
+
+
+
+void add_into_iq(IQ *iq, IQ_SLOT inst)
+{
+	if(is_iq_empty(iq))
+	{
+		iq->tail=0;
+		iq->head=0;
+		iq->slots[0]=inst;
+	}
+	else
+	{
+		iq->tail=(iq->tail+1)%ROB_SIZE;
+		iq->slots[iq->tail] = inst;
 	}
 }
 
@@ -568,8 +603,15 @@ APEX_decode(APEX_CPU *cpu)
             default:
                 break;
             }
+
+
             /* Copy data from decode latch to execute latch*/
-            cpu->execute = cpu->decode;
+
+
+            //cpu->execute = cpu->decode;
+            //copy the instruction to the issue queue.
+
+
             cpu->decode.has_insn = FALSE;
             if (cpu->decode.opcode != OPCODE_HALT)
             {
@@ -584,7 +626,10 @@ APEX_decode(APEX_CPU *cpu)
         if (ENABLE_DEBUG_MESSAGES && cpu->simulation_enabled == FALSE)
             print_stage_content("Decode/RF", &cpu->decode, FALSE);
     }
+
+
 }
+
 
 /*
  * Execute Stage of APEX Pipeline
@@ -705,7 +750,7 @@ APEX_execute(APEX_CPU *cpu)
                 cpu->pc = cpu->execute.pc + cpu->execute.imm;
                 cpu->is_branch_taken = TRUE;
 
-                /* Since we are using reverse callbacks for pipeline stages, 
+                /* Since we are using reverse callbacks for pipeline stages,
                      * this will prevent the new instruction from being fetched in the current cycle*/
                 // cpu->fetch_from_next_cycle = TRUE;
 
@@ -725,7 +770,7 @@ APEX_execute(APEX_CPU *cpu)
                 /* Calculate new PC, and send it to fetch unit */
                 cpu->pc = cpu->execute.pc + cpu->execute.imm;
 
-                /* Since we are using reverse callbacks for pipeline stages, 
+                /* Since we are using reverse callbacks for pipeline stages,
                      * this will prevent the new instruction from being fetched in the current cycle*/
                 // cpu->fetch_from_next_cycle = TRUE;
 
