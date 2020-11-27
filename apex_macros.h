@@ -19,7 +19,7 @@
 #define REG_FILE_SIZE 48
 
 /* Size of integer register file */
-#define R_TABLE_SIZE 140
+#define R_TABLE_SIZE 16
 
 /* Size of ROB */
 #define ROB_SIZE 64

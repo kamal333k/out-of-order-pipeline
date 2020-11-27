@@ -35,7 +35,6 @@ typedef struct R_TABLE_SLOT
 typedef struct R_TABLE
 {
     R_TABLE_SLOT entry[R_TABLE_SIZE];
-    int index;
 } R_TABLE;
 
 typedef struct ROB_SLOT
@@ -107,7 +106,7 @@ typedef struct APEX_CPU
     int simulation_enabled;
     int simulation_cycles;
     
-    R_TABLE rename_table[R_TABLE_SIZE];     /*  Rename Table  */
+    R_TABLE rename_table;     /*  Rename Table  */
     REG_FILE regs[REG_FILE_SIZE];       /* Integer register file */
     WK_array wk_array[REG_FILE_SIZE];       /* wk array */
     APEX_Instruction *code_memory; /* Code Memory */
