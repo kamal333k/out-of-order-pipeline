@@ -132,6 +132,16 @@ set_opcode_str(const char *opcode_str)
     {
         return OPCODE_HALT;
     }
+    
+    if (strcmp(opcode_str, "JAL") == 0)
+    {
+        return OPCODE_JAL;
+    }
+    
+    if (strcmp(opcode_str, "JUMP") == 0)
+    {
+        return OPCODE_JUMP;
+    }
 
     assert(0 && "Invalid opcode");
     return 0;
@@ -207,6 +217,7 @@ create_APEX_instruction(APEX_Instruction *ins, char *buffer)
         case OPCODE_ADDL:
         case OPCODE_SUBL:
         case OPCODE_LOAD:
+        case OPCODE_JAL:
         {
             ins->rd = get_num_from_string(tokens[0]);
             ins->rs1 = get_num_from_string(tokens[1]);
@@ -247,6 +258,14 @@ create_APEX_instruction(APEX_Instruction *ins, char *buffer)
             ins->imm = get_num_from_string(tokens[0]);
             break;
         }
+        
+        case OPCODE_JUMP:
+        {
+            ins->rs1 = get_num_from_string(tokens[0]);
+            ins->imm = get_num_from_string(tokens[1]);
+            break;
+        }
+        
     }
     /* Fill in rest of the instructions accordingly */
 }

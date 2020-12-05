@@ -24,6 +24,9 @@
 /* Size of ROB */
 #define ROB_SIZE 64
 
+/*Size of IQ*/
+#define IQ_SIZE 24
+
 /* Numeric OPCODE identifiers for instructions */
 #define OPCODE_ADD 0x0
 #define OPCODE_SUB 0x1
@@ -44,6 +47,8 @@
 #define OPCODE_SUBL 0x10
 #define OPCODE_CMP 0x11
 #define OPCODE_NOP 0x12
+#define OPCODE_JAL 0x13
+#define OPCODE_JUMP 0x14
 
 /* Variables used for registers status */
 #define VALID 1
@@ -52,6 +57,10 @@
 /* Set this flag to 1 to enable debug messages */
 #define ENABLE_DEBUG_MESSAGES 1
 #define DISABLE_DEBUG_MESSAGES 0
+
+/* Flags for IQ Status bit */
+#define ALLOCATED 1
+#define UNALLOCATED 0
 
 /* Set this flag to 1 to enable cycle single-step mode */
 #define ENABLE_SINGLE_STEP 1
