@@ -95,7 +95,6 @@ int main(int argc, char const *argv[])
         cpu->simulation_cycles = atoi(argv[3]);
         cpu->simulation_enabled = FALSE;
         APEX_cpu_run(cpu);
-        print_reg_file(cpu);
         print_data_mem(cpu);
         printf("---- Flag Register ----\n");
         printf("\t Zero Flag = %d \n",cpu->zero_flag.value);

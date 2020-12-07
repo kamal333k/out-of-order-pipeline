@@ -18,7 +18,17 @@
  *
  * Note: You are not supposed to edit this function
  */
+// int print_array(int arr[]){
+//    int loop;
 
+//     for(loop = 0; loop < REG_FILE_SIZE; loop++){
+//         printf("%d : status -> %d, value -> %d",loop, arr[loop].is_available, arr[loop].value);
+//         printf("\n");
+
+//     }
+//     return 0;
+
+// }
 int
 get_code_memory_index_from_pc(const int pc)
 {
@@ -264,8 +274,8 @@ APEX_fetch(APEX_CPU *cpu)
 
 void initialize_rob(ROB *rob)
 {
-    rob->tail = -1;
-    rob->head = -1;
+    rob->tail = 0;
+    rob->head = 0;
 }
 
 int is_rob_empty(ROB *rob)
@@ -359,14 +369,30 @@ int get_entry_from_rename_table(APEX_CPU *cpu, int dest_reg){
 }
 
 int get_free_reg_from_RF(APEX_CPU *cpu){
-    int free_reg = -1;
+    int free_reg = 0;
     for (int i = 0; i < REG_FILE_SIZE; i++)
     {
         if(cpu->regs[i].is_free){
+            cpu->regs[i].is_free = FALSE;
+            cpu->regs[i].status = INVALID;
             free_reg = i;
             break;
         }
     }
+    // print_reg_file(cpu);
+
+    return free_reg;
+}
+int is_free_reg_from_RF_available(APEX_CPU *cpu){
+    int free_reg = FALSE;
+    for (int i = 0; i < REG_FILE_SIZE; i++)
+    {
+        if(cpu->regs[i].is_free == TRUE){
+            free_reg = TRUE;
+            break;
+        }
+    }
+
     return free_reg;
 }
 
@@ -377,7 +403,16 @@ int is_iq_empty(IQ *iq)
 
 int is_iq_full(IQ *iq)
 {
-    return ((iq->tail + 1) % IQ_SIZE == iq->head);
+    int res = TRUE;
+    for (int i = 0; i < IQ_SIZE; i++)
+    {
+        if(iq->slots[i].status == UNALLOCATED){
+            iq->tail = i;
+            res = FALSE;
+            break;
+        }
+    }
+    return res;
 }
 
 IQ_SLOT create_entry_for_issue_queue(APEX_CPU *cpu, CPU_Stage *inst){
@@ -599,9 +634,12 @@ decode_stage(APEX_CPU *cpu)
             case OPCODE_XOR:
             case OPCODE_LDR:
             {
+
                 strcpy(cpu->decode.inst_type, "reg");
                 cpu->decode.rs1 = get_entry_from_rename_table(cpu, cpu->decode.rs1);
                 cpu->decode.rs2 = get_entry_from_rename_table(cpu, cpu->decode.rs2);
+                // printf("rs1 rs2 %d %d \n",cpu->decode.rs1, cpu->decode.rs2);
+                // print_array()
                 break;
             }
             
@@ -655,8 +693,10 @@ decode_stage(APEX_CPU *cpu)
         // {
         //     print_stage_content("Decode/RF", &cpu->decode, cpu->decode.has_insn);
         // }
-
-        if(is_iq_full(&cpu->issue_queue_entry) || is_rob_full(&cpu->rob_queue) || get_free_reg_from_RF(cpu) == -1){
+        // printf("is_iq_full -> %d \n",is_iq_full(&cpu->issue_queue_entry));
+        // printf("is_rob_full -> %d \n",is_rob_full(&cpu->rob_queue));
+        // printf("is_free_reg_from_RF_available -> %d \n",is_free_reg_from_RF_available(cpu));
+        if(is_iq_full(&cpu->issue_queue_entry) == TRUE || is_rob_full(&cpu->rob_queue) == TRUE || is_free_reg_from_RF_available(cpu) == FALSE){
             cpu->stop_dispatch = TRUE;
         }else{
             int arch_reg = cpu->decode.rd;
@@ -675,6 +715,7 @@ decode_stage(APEX_CPU *cpu)
                 case OPCODE_OR:
                 case OPCODE_XOR:
                 case OPCODE_LDR:
+                case OPCODE_MOVC:
                 {
                     cpu->decode.rd = get_free_reg_from_RF(cpu);
                     create_entry_in_rename_table(cpu, arch_reg, cpu->decode.rd);
@@ -685,10 +726,12 @@ decode_stage(APEX_CPU *cpu)
                     break;
                 }
             }
+            printf("iq tail %d \n", cpu->issue_queue_entry.tail);
             add_into_iq(cpu, &cpu->decode);
             add_into_rob(cpu, &cpu->decode, arch_reg);
             issue_queue_stage(cpu);
             cpu->decode.has_insn = FALSE;
+
             if (cpu->decode.opcode != OPCODE_HALT)
             {
                 cpu->fetch.has_insn = TRUE;
@@ -801,7 +844,7 @@ void remove_empty_segments_from_iq(APEX_CPU *cpu){
     int j = 0;
     IQ iq_slots_helper;
     while(i != IQ_SIZE){
-        if(cpu->issue_queue_entry.slots[i].status == ALLOCATED){
+        if(cpu->issue_queue_entry.slots[i].status == UNALLOCATED){
             iq_slots_helper.slots[j] = cpu->issue_queue_entry.slots[i];
             i++;
             j++;
@@ -812,11 +855,12 @@ void remove_empty_segments_from_iq(APEX_CPU *cpu){
         }
     }
     
-    cpu->issue_queue_entry = iq_slots_helper;
+    memcpy(cpu->issue_queue_entry.slots, iq_slots_helper.slots,sizeof(cpu->issue_queue_entry.slots));
+    cpu->issue_queue_entry.tail = j;
 }
 
 int is_instruction_valid_for_issuing(APEX_CPU *cpu, IQ_SLOT *inst){
-    int result = FALSE;
+    int result = TRUE;
             
     switch(inst->opcode){
         case OPCODE_ADD:
@@ -897,8 +941,12 @@ issue_queue_stage(APEX_CPU *cpu)
         
         IQ_SLOT *inst = &cpu->issue_queue_entry.slots[head_pointer];
         // check if all the operands are read out from the RF
-        if(is_instruction_valid_for_issuing(cpu, inst)){
-            if (cpu->intfu.has_insn == FALSE && is_instruction_for_intfu(inst))
+        printf("is_instruction_valid_for_issuing(cpu) %d \n", is_instruction_valid_for_issuing(cpu, inst));
+
+        if(is_instruction_valid_for_issuing(cpu, inst) == TRUE){
+            printf("is_instruction_for_intfu(cpu) %d \n", is_instruction_for_intfu(inst));
+
+            if (cpu->intfu.has_insn == FALSE && is_instruction_for_intfu(inst) == TRUE)
             {
                 cpu->intfu.iq_entry = cpu->issue_queue_entry.slots[head_pointer];
                 cpu->intfu.has_insn = TRUE;
@@ -946,6 +994,7 @@ intfu(APEX_CPU *cpu)
         // printf("rs1 %d, rs2 %d \n", inst->src1_val, inst->src2_val);
         /* Execute logic based on instruction type */
         int result_buffer;
+        printf("opcode -> %d",cpu->intfu.iq_entry.opcode);
         switch (cpu->intfu.iq_entry.opcode)
         {
         case OPCODE_ADD:
@@ -1031,6 +1080,7 @@ intfu(APEX_CPU *cpu)
 
         case OPCODE_MOVC:
         {
+            printf("MOVC \n");
             result_buffer = cpu->intfu.iq_entry.imm;
             break;
         }
@@ -1041,9 +1091,12 @@ intfu(APEX_CPU *cpu)
         int dest_phy_reg_add = cpu->rob_queue.slots[rob_index].dest_phy_reg_add;
         cpu->regs[dest_phy_reg_add].value = result_buffer;
         cpu->regs[dest_phy_reg_add].status = VALID;
+        printf("buffer %d \n", cpu->intfu.iq_entry.imm);
+        // print_reg_file(cpu);
         
         /* this states that the execution of the instruction is completed*/
         cpu->rob_queue.slots[rob_index].status = TRUE; 
+        cpu->intfu.has_insn = FALSE;
     }
     else
     {
@@ -1066,8 +1119,8 @@ mulfu(APEX_CPU *cpu)
             cpu->mulfu.has_insn = FALSE;
             cpu->mulfu.fu_delay = 0;
             int result_buffer = cpu->mulfu.iq_entry.src1_val * cpu->mulfu.iq_entry.src2_val;
-            cpu->regs[cpu->mulfu.iq_entry.src1_tag].value = result_buffer;
-            cpu->regs[cpu->mulfu.iq_entry.src1_tag].status = VALID;
+            // cpu->regs[cpu->mulfu.iq_entry.src1_tag].value = result_buffer;
+            // cpu->regs[cpu->mulfu.iq_entry.src1_tag].status = VALID;
             
             /* Updating ROB slot of that instruction*/
             int rob_index = cpu->mulfu.iq_entry.rob_index;
@@ -1161,7 +1214,7 @@ m2(APEX_CPU *cpu)
         int memory_address = cpu->rob_queue.slots[cpu->m2.iq_entry.rob_index].calc_mem_add;
         int dest_phy_reg_add = cpu->rob_queue.slots[cpu->m2.iq_entry.rob_index].dest_phy_reg_add;
         int src1_tag = cpu->rob_queue.slots[cpu->m2.iq_entry.rob_index].src1_tag;
-        switch (cpu->m2.opcode)
+        switch (cpu->m2.iq_entry.opcode)
         {
 
         case OPCODE_LOAD:
@@ -1220,7 +1273,11 @@ void flush_the_instructions_followed_branch(APEX_CPU *cpu, int rob_index, int ch
 static void
 jbu1(APEX_CPU *cpu)
 {
-        switch(cpu->jbu1.opcode){
+    if (cpu->jbu1.has_insn == TRUE)
+    {
+        /* code */
+        switch(cpu->jbu1.iq_entry.opcode){
+    
           case OPCODE_BZ:
           {
               int rob_index = cpu->jbu1.iq_entry.bis_index;
@@ -1295,57 +1352,62 @@ jbu1(APEX_CPU *cpu)
             }
             
         }
+    }
     
 }
 static void
 jbu2(APEX_CPU *cpu)
 {
-    switch(cpu->jbu2.opcode){
-        case OPCODE_JAL:
-         {
-             int rob_index = cpu->jbu2.iq_entry.bis_index;
-             flush_the_instructions_followed_branch(cpu, rob_index, cpu->jbu2.iq_entry.checkpoint_info);
-                 /* Calculate new PC, and send it to fetch unit */
-                    cpu->pc = cpu->jbu2.memory_address;
-                    
-                    /* Since we are using reverse callbacks for pipeline stages, 
-                     * this will prevent the new instruction from being fetched in the current cycle*/
-                    cpu->fetch_from_next_cycle = TRUE;
+    if (cpu->jbu1.has_insn == TRUE){
+        switch(cpu->jbu2.iq_entry.opcode){
+            case OPCODE_JAL:
+            {
+                int rob_index = cpu->jbu2.iq_entry.bis_index;
+                flush_the_instructions_followed_branch(cpu, rob_index, cpu->jbu2.iq_entry.checkpoint_info);
+                    /* Calculate new PC, and send it to fetch unit */
+                        cpu->pc = cpu->jbu2.memory_address;
+                        
+                        /* Since we are using reverse callbacks for pipeline stages, 
+                        * this will prevent the new instruction from being fetched in the current cycle*/
+                        cpu->fetch_from_next_cycle = TRUE;
 
-                    /* Flush previous stages */
-                    cpu->decode.has_insn = FALSE;
+                        /* Flush previous stages */
+                        cpu->decode.has_insn = FALSE;
 
-                    /* Make sure fetch stage is enabled to start fetching from new PC */
-                    cpu->fetch.has_insn = TRUE;
-            
-            break; 
-         } 
-        case OPCODE_JUMP:
-        {
-            int rob_index = cpu->jbu2.iq_entry.bis_index;
-            flush_the_instructions_followed_branch(cpu, rob_index, cpu->jbu2.iq_entry.checkpoint_info);
-                 /* Calculate new PC, and send it to fetch unit */
-                    cpu->pc = cpu->jbu2.memory_address;
-                    
-                    /* Since we are using reverse callbacks for pipeline stages, 
-                     * this will prevent the new instruction from being fetched in the current cycle*/
-                    cpu->fetch_from_next_cycle = TRUE;
+                        /* Make sure fetch stage is enabled to start fetching from new PC */
+                        cpu->fetch.has_insn = TRUE;
+                
+                break; 
+            } 
+            case OPCODE_JUMP:
+            {
+                int rob_index = cpu->jbu2.iq_entry.bis_index;
+                flush_the_instructions_followed_branch(cpu, rob_index, cpu->jbu2.iq_entry.checkpoint_info);
+                    /* Calculate new PC, and send it to fetch unit */
+                        cpu->pc = cpu->jbu2.memory_address;
+                        
+                        /* Since we are using reverse callbacks for pipeline stages, 
+                        * this will prevent the new instruction from being fetched in the current cycle*/
+                        cpu->fetch_from_next_cycle = TRUE;
 
-                    /* Flush previous stages */
-                    cpu->decode.has_insn = FALSE;
+                        /* Flush previous stages */
+                        cpu->decode.has_insn = FALSE;
 
-                    /* Make sure fetch stage is enabled to start fetching from new PC */
-                    cpu->fetch.has_insn = TRUE;
-            
-            break;
-        }
-    }  
+                        /* Make sure fetch stage is enabled to start fetching from new PC */
+                        cpu->fetch.has_insn = TRUE;
+                
+                break;
+            }
+        }  
+
+    }
 }
 
 static int
 rob(APEX_CPU *cpu)
 {
     if(cpu->rob_queue.tail >= 0){
+        
         ROB_SLOT *rob_head = &cpu->rob_queue.slots[cpu->rob_queue.tail];
         if(rob_head->status == VALID){
             if(rob_head->dest_phy_reg_add != cpu->rename_table[rob_head->arch_reg]){
@@ -1415,7 +1477,12 @@ APEX_cpu_init(const char *filename)
                    cpu->code_memory[i].rs2, cpu->code_memory[i].imm);
         }
     }
-
+    /* Initialise wk array */
+    for (int i = 0; i < REG_FILE_SIZE; i++)
+    {
+        cpu->regs[i].status = VALID;
+        cpu->regs[i].is_free = TRUE;
+    }
     /* To start fetch stage */
     cpu->fetch.has_insn = TRUE;
     return cpu;
@@ -1439,7 +1506,7 @@ void APEX_cpu_run(APEX_CPU *cpu)
             printf("--------------------------------------------\n");
         }
 
-        if (rob(cpu) || cpu->clock == 10)
+        if (rob(cpu) || cpu->clock == 50)
         {
             /* Halt in writeback stage */
             printf("APEX_CPU: Simulation Complete, cycles = %d instructions = %d\n", cpu->clock, cpu->insn_completed);
