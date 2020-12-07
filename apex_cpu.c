@@ -160,12 +160,6 @@ print_stage_content_iq_entry(const char *name, const IQ_SLOT *iq_stage, int has_
     printf("\n");
 }
 
-void
-print_stage_content_rob_entry(const char *name, const CPU_Stage *stage, const IQ_SLOT *iq_stage, int has_insn)
-{
-
-}
-
 /* Debug function which prints the register file
  *
  * Note: You are not supposed to edit this function
