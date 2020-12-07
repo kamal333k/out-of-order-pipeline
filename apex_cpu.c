@@ -35,6 +35,8 @@ get_code_memory_index_from_pc(const int pc)
     return (pc - 4000) / 4;
 }
 
+
+
 void
 print_instruction(const CPU_Stage *stage, int has_insn)
 {
@@ -141,6 +143,29 @@ print_stage_content(const char *name, const CPU_Stage *stage, int has_insn)
     printf("\n");
 }
 
+void
+print_stage_content_iq_entry(const char *name, const IQ_SLOT *iq_stage, int has_insn)
+{
+    if (iq_stage->opcode == 0)
+    {
+        printf("%-15s: ", name);
+    }
+    else
+    {
+        printf("%-15s: pc(%-4d) ", name, iq_stage->pc);
+    }
+    
+    printf("\n Details of IQ (Issue Queue) State –>  \t %s P%d P%d P%d", iq_stage->opcode, iq_stage->status, 
+            iq_stage->rob_index, iq_stage->src1_bit, iq_stage->src2_bit,iq_stage->src1_tag, iq_stage->src2_tag);
+    printf("\n");
+}
+
+void
+print_stage_content_rob_entry(const char *name, const CPU_Stage *stage, const IQ_SLOT *iq_stage, int has_insn)
+{
+
+}
+
 /* Debug function which prints the register file
  *
  * Note: You are not supposed to edit this function
@@ -188,7 +213,6 @@ APEX_fetch(APEX_CPU *cpu)
 {
     APEX_Instruction *current_ins;
 
-    // printf("cpu->fetch.has_insn %d",cpu->fetch.has_insn);
     if (cpu->fetch.has_insn)
     {
         /* This fetches new branch target instruction from next cycle */
@@ -237,6 +261,7 @@ APEX_fetch(APEX_CPU *cpu)
         
         if (cpu->stop_dispatch == TRUE || cpu->is_branch_taken == TRUE)
         {
+            printf("STOP DISPATCHING AND BRANCH IS TAKEN");
             // Do nothing
         }
         else
@@ -260,10 +285,14 @@ APEX_fetch(APEX_CPU *cpu)
             if(cpu->is_jal_active.status == TRUE){
                cpu->pc = cpu->regs[cpu->is_jal_active.reg_index].value;
             }else{
+                // printf("FETCH IS FALSE NOW\n");
+                // printf("DECODE IS  NOW -> %d\n",cpu->decode.has_insn);
                 cpu->fetch.has_insn = FALSE;
                 cpu->fetch.opcode = 0;
             }
         }
+        // printf("cpu->fetch.has_insn %d %d \n",cpu->fetch.has_insn , cpu->fetch.opcode);
+
     }
     else
     {
@@ -616,6 +645,7 @@ void flush_instruction_from_rob(APEX_CPU *cpu, int rob_index){
 static void
 decode_stage(APEX_CPU *cpu)
 {
+    printf("cpu->decode.has_insn %d %d \n",cpu->decode.has_insn , cpu->decode.opcode);
     if (cpu->decode.has_insn)
     {
         
@@ -726,7 +756,7 @@ decode_stage(APEX_CPU *cpu)
                     break;
                 }
             }
-            printf("iq tail %d \n", cpu->issue_queue_entry.tail);
+            // printf("iq tail %d \n", cpu->issue_queue_entry.tail);
             add_into_iq(cpu, &cpu->decode);
             add_into_rob(cpu, &cpu->decode, arch_reg);
             issue_queue_stage(cpu);
@@ -738,6 +768,9 @@ decode_stage(APEX_CPU *cpu)
             }
             else
             {
+                // printf("HALT => FETCH IN DECODE %d \n",cpu->fetch.has_insn);
+                cpu->fetch.has_insn = FALSE;
+
                 cpu->decode.opcode = 0;
             }
         }
@@ -941,10 +974,10 @@ issue_queue_stage(APEX_CPU *cpu)
         
         IQ_SLOT *inst = &cpu->issue_queue_entry.slots[head_pointer];
         // check if all the operands are read out from the RF
-        printf("is_instruction_valid_for_issuing(cpu) %d \n", is_instruction_valid_for_issuing(cpu, inst));
+        // printf("is_instruction_valid_for_issuing(cpu) %d \n", is_instruction_valid_for_issuing(cpu, inst));
 
         if(is_instruction_valid_for_issuing(cpu, inst) == TRUE){
-            printf("is_instruction_for_intfu(cpu) %d \n", is_instruction_for_intfu(inst));
+            // printf("is_instruction_for_intfu(cpu) %d \n", is_instruction_for_intfu(inst));
 
             if (cpu->intfu.has_insn == FALSE && is_instruction_for_intfu(inst) == TRUE)
             {
@@ -965,6 +998,7 @@ issue_queue_stage(APEX_CPU *cpu)
                 is_instruction_at_the_head_of_rob(cpu, &cpu->issue_queue_entry.slots[head_pointer])
             )
             {
+                printf("MEmory inst in issue queue");
                 cpu->m1.iq_entry = cpu->issue_queue_entry.slots[head_pointer];
                 cpu->m1.has_insn = TRUE;
             }
@@ -994,7 +1028,6 @@ intfu(APEX_CPU *cpu)
         // printf("rs1 %d, rs2 %d \n", inst->src1_val, inst->src2_val);
         /* Execute logic based on instruction type */
         int result_buffer;
-        printf("opcode -> %d",cpu->intfu.iq_entry.opcode);
         switch (cpu->intfu.iq_entry.opcode)
         {
         case OPCODE_ADD:
@@ -1080,22 +1113,26 @@ intfu(APEX_CPU *cpu)
 
         case OPCODE_MOVC:
         {
-            printf("MOVC \n");
             result_buffer = cpu->intfu.iq_entry.imm;
             break;
         }
+        default:
+            break;
         }
         
-        /* Updating ROB slot of that instruction*/
         int rob_index = cpu->intfu.iq_entry.rob_index;
-        int dest_phy_reg_add = cpu->rob_queue.slots[rob_index].dest_phy_reg_add;
-        cpu->regs[dest_phy_reg_add].value = result_buffer;
-        cpu->regs[dest_phy_reg_add].status = VALID;
-        printf("buffer %d \n", cpu->intfu.iq_entry.imm);
+        if(cpu->intfu.iq_entry.opcode != OPCODE_HALT && cpu->intfu.iq_entry.opcode != OPCODE_CMP){
+            /* Updating ROB slot of that instruction*/
+            int dest_phy_reg_add = cpu->rob_queue.slots[rob_index].dest_phy_reg_add;
+            cpu->regs[dest_phy_reg_add].value = result_buffer;
+            cpu->regs[dest_phy_reg_add].status = VALID;
+            printf("buffer %d \n", cpu->intfu.iq_entry.imm);
+
+        }
+        cpu->rob_queue.slots[rob_index].status = TRUE; 
         // print_reg_file(cpu);
         
         /* this states that the execution of the instruction is completed*/
-        cpu->rob_queue.slots[rob_index].status = TRUE; 
         cpu->intfu.has_insn = FALSE;
     }
     else
@@ -1103,6 +1140,8 @@ intfu(APEX_CPU *cpu)
         // if (ENABLE_DEBUG_MESSAGES && cpu->simulation_enabled == FALSE)
         //     print_stage_content("Execute", &cpu->execute, FALSE);
     }
+
+    print_stage_content_iq_entry('intfu', &cpu->intfu.iq_entry, FALSE);
 }
 
 static void
@@ -1141,6 +1180,8 @@ mulfu(APEX_CPU *cpu)
         // if (ENABLE_DEBUG_MESSAGES && cpu->simulation_enabled == FALSE)
         //     print_stage_content("Execute", &cpu->execute, FALSE);
     }
+
+        print_stage_content_iq_entry('mulfu', &cpu->mulfu.iq_entry, FALSE);
 }
 
 static void
@@ -1149,7 +1190,7 @@ m1(APEX_CPU *cpu)
     // print_array(cpu->wk_array);
     if (cpu->m1.has_insn)
     {
-        // printf("rs1 %d, rs2 %d \n", inst->src1_val, inst->src2_val);
+        printf("inst->opcode in m1 %d \n", cpu->m1.iq_entry.opcode);
         /* Execute logic based on instruction type */
         IQ_SLOT *inst = &cpu->m1.iq_entry;
         int memory_address;
@@ -1181,7 +1222,7 @@ m1(APEX_CPU *cpu)
             /* Copy data from execute latch to memory latch*/
             int src_tag = cpu->rob_queue.slots[cpu->m1.iq_entry.rob_index].src1_tag;
             if(cpu->regs[src_tag].status == VALID){
-                cpu->m2 = cpu->m1;
+                cpu->m2.iq_entry = cpu->m1.iq_entry;
                 cpu->m1.has_insn = FALSE;
             }else{
                 CPU_Stage NOP;
@@ -1190,7 +1231,7 @@ m1(APEX_CPU *cpu)
                 cpu->m2.has_insn = TRUE;
             }
         }else{
-            cpu->m2 = cpu->m1;
+            cpu->m2.iq_entry = cpu->m1.iq_entry;
             cpu->m1.has_insn = FALSE;
         }
     }
@@ -1199,6 +1240,8 @@ m1(APEX_CPU *cpu)
         // if (ENABLE_DEBUG_MESSAGES && cpu->simulation_enabled == FALSE)
         //     print_stage_content("Execute", &cpu->m1, FALSE);
     }
+
+        print_stage_content_iq_entry('m1', &cpu->m1.iq_entry, FALSE);
 }
 
 
@@ -1252,6 +1295,8 @@ m2(APEX_CPU *cpu)
         // if (ENABLE_DEBUG_MESSAGES && cpu->simulation_enabled == FALSE)
         //     print_stage_content("Execute", &cpu->execute, FALSE);
     }
+
+        print_stage_content_iq_entry('m2', &cpu->m2.iq_entry, FALSE);
 }
 
 void restore_rename_table(APEX_CPU *cpu, int checkpoint_info){
@@ -1338,6 +1383,7 @@ jbu1(APEX_CPU *cpu)
               cpu->is_jal_active.status = TRUE;
               cpu->is_jal_active.reg_index = dest_phy_reg_add;
               cpu->jbu2 = cpu->jbu1;
+              cpu->jbu2.has_insn = TRUE;
               cpu->jbu1.has_insn = FALSE;
               break;
           }
@@ -1347,18 +1393,21 @@ jbu1(APEX_CPU *cpu)
             {
               cpu->jbu1.memory_address = cpu->jbu1.iq_entry.src1_val + cpu->jbu1.iq_entry.imm;
               cpu->jbu2 = cpu->jbu1;
+              cpu->jbu2.has_insn = TRUE;
               cpu->jbu1.has_insn = FALSE;
               break;
             }
             
         }
     }
+
+            print_stage_content_iq_entry('jbu1', &cpu->jbu1.iq_entry, FALSE);
     
 }
 static void
 jbu2(APEX_CPU *cpu)
 {
-    if (cpu->jbu1.has_insn == TRUE){
+    if (cpu->jbu2.has_insn == TRUE){
         switch(cpu->jbu2.iq_entry.opcode){
             case OPCODE_JAL:
             {
@@ -1401,6 +1450,8 @@ jbu2(APEX_CPU *cpu)
         }  
 
     }
+
+        print_stage_content_iq_entry('jbu2', &cpu->jbu2.iq_entry, FALSE);
 }
 
 static int
@@ -1415,10 +1466,13 @@ rob(APEX_CPU *cpu)
             }
             cpu->rob_queue.head++;
             cpu->insn_completed++;
-
+            if(rob_head->opcode == OPCODE_HALT){
+                return 1;
+            }
         }
     }
     return 0;
+    
 }
 
 /*
@@ -1506,7 +1560,7 @@ void APEX_cpu_run(APEX_CPU *cpu)
             printf("--------------------------------------------\n");
         }
 
-        if (rob(cpu) || cpu->clock == 50)
+        if (rob(cpu) || cpu->clock == 20)
         {
             /* Halt in writeback stage */
             printf("APEX_CPU: Simulation Complete, cycles = %d instructions = %d\n", cpu->clock, cpu->insn_completed);
@@ -1522,6 +1576,9 @@ void APEX_cpu_run(APEX_CPU *cpu)
         intfu(cpu);
         decode_stage(cpu);
         APEX_fetch(cpu);
+
+
+        // print_stage_content("Decode/RF", &cpu->decode, FALSE);
 
         if (cpu->single_step)
         {
