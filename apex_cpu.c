@@ -155,13 +155,13 @@ print_stage_content_iq_entry(const char *name, const IQ_SLOT *iq_stage, int has_
         printf("%-15s: pc(%-4d) ", name, iq_stage->pc);
     }
     
-    printf("\n Details of IQ (Issue Queue) State –>  \t %s P%d P%d P%d P%d P%d P%d", iq_stage->opcode, iq_stage->status, 
+    printf("\n Details of IQ (Issue Queue) State –>  \t %d P%d P%d P%d P%d P%d P%d", iq_stage->opcode, iq_stage->status, 
             iq_stage->rob_index, iq_stage->src1_bit, iq_stage->src2_bit,iq_stage->src1_tag, iq_stage->src2_tag);
     printf("\n");
 }
 
 
-print_rob(const char *name, const ROB *rob)
+void print_rob(const char *name, const ROB *rob)
 {
     int i = 0;
     printf("ROB.head -> %d \n",rob->head);
@@ -1160,7 +1160,7 @@ intfu(APEX_CPU *cpu)
         //     print_stage_content("Execute", &cpu->execute, FALSE);
     }
 
-    print_stage_content_iq_entry('intfu', &cpu->intfu.iq_entry, FALSE);
+    print_stage_content_iq_entry("intfu", &cpu->intfu.iq_entry, FALSE);
 }
 
 static void
@@ -1200,7 +1200,7 @@ mulfu(APEX_CPU *cpu)
         //     print_stage_content("Execute", &cpu->execute, FALSE);
     }
 
-        print_stage_content_iq_entry('mulfu', &cpu->mulfu.iq_entry, FALSE);
+        print_stage_content_iq_entry("mulfu", &cpu->mulfu.iq_entry, FALSE);
 }
 
 static void
@@ -1260,7 +1260,7 @@ m1(APEX_CPU *cpu)
         //     print_stage_content("Execute", &cpu->m1, FALSE);
     }
 
-        print_stage_content_iq_entry('m1', &cpu->m1.iq_entry, FALSE);
+        print_stage_content_iq_entry("m1", &cpu->m1.iq_entry, FALSE);
 }
 
 
@@ -1315,7 +1315,7 @@ m2(APEX_CPU *cpu)
         //     print_stage_content("Execute", &cpu->execute, FALSE);
     }
 
-        print_stage_content_iq_entry('m2', &cpu->m2.iq_entry, FALSE);
+        print_stage_content_iq_entry("m2", &cpu->m2.iq_entry, FALSE);
 }
 
 void restore_rename_table(APEX_CPU *cpu, int checkpoint_info){
@@ -1420,7 +1420,7 @@ jbu1(APEX_CPU *cpu)
         }
     }
 
-            print_stage_content_iq_entry('jbu1', &cpu->jbu1.iq_entry, FALSE);
+            print_stage_content_iq_entry("jbu1", &cpu->jbu1.iq_entry, FALSE);
     
 }
 static void
@@ -1470,7 +1470,7 @@ jbu2(APEX_CPU *cpu)
 
     }
 
-        print_stage_content_iq_entry('jbu2', &cpu->jbu2.iq_entry, FALSE);
+        print_stage_content_iq_entry("jbu2", &cpu->jbu2.iq_entry, FALSE);
 }
 
 static int
