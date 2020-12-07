@@ -140,6 +140,7 @@ typedef struct APEX_CPU
     int simulation_cycles;
     int stop_dispatch; // to stop the dispatching into the issue queue when IQ is full or ROB is full
     int rename_table[R_TABLE_SIZE];     /*  Rename Table  */
+    int back_end_table[R_TABLE_SIZE]; /*Backend Rename Table */
     
     REG_FILE regs[REG_FILE_SIZE];       /* Unified register file */
     APEX_Instruction *code_memory; /* Code Memory */
