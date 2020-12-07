@@ -155,7 +155,7 @@ print_stage_content_iq_entry(const char *name, const IQ_SLOT *iq_stage, int has_
         printf("%-15s: pc(%-4d) ", name, iq_stage->pc);
     }
     
-    printf("\n Details of IQ (Issue Queue) State –>  \t %s P%d P%d P%d", iq_stage->opcode, iq_stage->status, 
+    printf("\n Details of IQ (Issue Queue) State –>  \t %s P%d P%d P%d P%d P%d P%d", iq_stage->opcode, iq_stage->status, 
             iq_stage->rob_index, iq_stage->src1_bit, iq_stage->src2_bit,iq_stage->src1_tag, iq_stage->src2_tag);
     printf("\n");
 }
