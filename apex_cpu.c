@@ -1479,7 +1479,7 @@ rob(APEX_CPU *cpu)
     if(cpu->rob_queue.tail >= 0){
         
         ROB_SLOT *rob_head = &cpu->rob_queue.slots[cpu->rob_queue.head];
-        print_rob("ROB",&cpu->rob_queue);
+        // print_rob("ROB",&cpu->rob_queue);
 
         if(rob_head->status == VALID){
             if(rob_head->dest_phy_reg_add != cpu->rename_table[rob_head->arch_reg]){
