@@ -21,6 +21,9 @@
 /* Size of integer register file */
 #define R_TABLE_SIZE 16
 
+/* Size of BIS */
+#define BIS_SIZE 16
+
 /* Size of ROB */
 #define ROB_SIZE 64
 

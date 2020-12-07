@@ -75,7 +75,7 @@ int main(int argc, char const *argv[])
         cpu->simulation_cycles = atoi(argv[3]);
         APEX_cpu_run(cpu);
         print_reg_file(cpu);
-            print_data_mem(cpu);
+        print_data_mem(cpu);
     }
     if(strcmp(argv[2],"single_step") == 0){
         if(argc != 3){
@@ -98,7 +98,7 @@ int main(int argc, char const *argv[])
         print_reg_file(cpu);
         print_data_mem(cpu);
         printf("---- Flag Register ----\n");
-        printf("\t Zero Flag = %d \n",cpu->zero_flag);
+        printf("\t Zero Flag = %d \n",cpu->zero_flag.value);
         if(argv[4]){
             char addresses[strlen(argv[4])+1];
             strcpy(addresses,argv[4]);
