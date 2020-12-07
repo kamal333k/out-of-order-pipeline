@@ -950,10 +950,10 @@ issue_queue_stage(APEX_CPU *cpu)
         
         IQ_SLOT *inst = &cpu->issue_queue_entry.slots[head_pointer];
         // check if all the operands are read out from the RF
-        printf("is_instruction_valid_for_issuing(cpu) %d \n", is_instruction_valid_for_issuing(cpu, inst));
+        // printf("is_instruction_valid_for_issuing(cpu) %d \n", is_instruction_valid_for_issuing(cpu, inst));
 
         if(is_instruction_valid_for_issuing(cpu, inst) == TRUE){
-            printf("is_instruction_for_intfu(cpu) %d \n", is_instruction_for_intfu(inst));
+            // printf("is_instruction_for_intfu(cpu) %d \n", is_instruction_for_intfu(inst));
 
             if (cpu->intfu.has_insn == FALSE && is_instruction_for_intfu(inst) == TRUE)
             {
@@ -974,6 +974,7 @@ issue_queue_stage(APEX_CPU *cpu)
                 is_instruction_at_the_head_of_rob(cpu, &cpu->issue_queue_entry.slots[head_pointer])
             )
             {
+                printf("M1 stage is executed");
                 cpu->m1.iq_entry = cpu->issue_queue_entry.slots[head_pointer];
                 cpu->m1.has_insn = TRUE;
             }
@@ -1003,7 +1004,7 @@ intfu(APEX_CPU *cpu)
         // printf("rs1 %d, rs2 %d \n", inst->src1_val, inst->src2_val);
         /* Execute logic based on instruction type */
         int result_buffer;
-        printf("opcode -> %d",cpu->intfu.iq_entry.opcode);
+        // printf("opcode -> %d",cpu->intfu.iq_entry.opcode);
         switch (cpu->intfu.iq_entry.opcode)
         {
         case OPCODE_ADD:
@@ -1155,7 +1156,7 @@ mulfu(APEX_CPU *cpu)
 static void
 m1(APEX_CPU *cpu)
 {
-    // print_array(cpu->wk_array);
+    printf("M1 Stage %d \n",cpu->m1.has_insn);
     if (cpu->m1.has_insn)
     {
         // printf("rs1 %d, rs2 %d \n", inst->src1_val, inst->src2_val);
@@ -1517,7 +1518,7 @@ void APEX_cpu_run(APEX_CPU *cpu)
             printf("--------------------------------------------\n");
         }
 
-        if (rob(cpu) || cpu->clock == 50)
+        if (rob(cpu) || cpu->clock == 20)
         {
             /* Halt in writeback stage */
             printf("APEX_CPU: Simulation Complete, cycles = %d instructions = %d\n", cpu->clock, cpu->insn_completed);
