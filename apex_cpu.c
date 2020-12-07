@@ -35,6 +35,8 @@ get_code_memory_index_from_pc(const int pc)
     return (pc - 4000) / 4;
 }
 
+
+
 void
 print_instruction(const CPU_Stage *stage, int has_insn)
 {
@@ -139,6 +141,29 @@ print_stage_content(const char *name, const CPU_Stage *stage, int has_insn)
     }
     print_instruction(stage, has_insn);
     printf("\n");
+}
+
+void
+print_stage_content_iq_entry(const char *name, const IQ_SLOT *iq_stage, int has_insn)
+{
+    if (iq_stage->opcode == 0)
+    {
+        printf("%-15s: ", name);
+    }
+    else
+    {
+        printf("%-15s: pc(%-4d) ", name, iq_stage->pc);
+    }
+    
+    printf("\n Details of IQ (Issue Queue) State –>  \t %s P%d P%d P%d", iq_stage->opcode, iq_stage->status, 
+            iq_stage->rob_index, iq_stage->src1_bit, iq_stage->src2_bit,iq_stage->src1_tag, iq_stage->src2_tag);
+    printf("\n");
+}
+
+void
+print_stage_content_rob_entry(const char *name, const CPU_Stage *stage, const IQ_SLOT *iq_stage, int has_insn)
+{
+
 }
 
 /* Debug function which prints the register file
@@ -1115,6 +1140,8 @@ intfu(APEX_CPU *cpu)
         // if (ENABLE_DEBUG_MESSAGES && cpu->simulation_enabled == FALSE)
         //     print_stage_content("Execute", &cpu->execute, FALSE);
     }
+
+    print_stage_content_iq_entry('intfu', &cpu->intfu.iq_entry, FALSE);
 }
 
 static void
@@ -1153,6 +1180,8 @@ mulfu(APEX_CPU *cpu)
         // if (ENABLE_DEBUG_MESSAGES && cpu->simulation_enabled == FALSE)
         //     print_stage_content("Execute", &cpu->execute, FALSE);
     }
+
+        print_stage_content_iq_entry('mulfu', &cpu->mulfu.iq_entry, FALSE);
 }
 
 static void
@@ -1211,6 +1240,8 @@ m1(APEX_CPU *cpu)
         // if (ENABLE_DEBUG_MESSAGES && cpu->simulation_enabled == FALSE)
         //     print_stage_content("Execute", &cpu->m1, FALSE);
     }
+
+        print_stage_content_iq_entry('m1', &cpu->m1.iq_entry, FALSE);
 }
 
 
@@ -1264,6 +1295,8 @@ m2(APEX_CPU *cpu)
         // if (ENABLE_DEBUG_MESSAGES && cpu->simulation_enabled == FALSE)
         //     print_stage_content("Execute", &cpu->execute, FALSE);
     }
+
+        print_stage_content_iq_entry('m2', &cpu->m2.iq_entry, FALSE);
 }
 
 void restore_rename_table(APEX_CPU *cpu, int checkpoint_info){
@@ -1367,6 +1400,8 @@ jbu1(APEX_CPU *cpu)
             
         }
     }
+
+            print_stage_content_iq_entry('jbu1', &cpu->jbu1.iq_entry, FALSE);
     
 }
 static void
@@ -1415,6 +1450,8 @@ jbu2(APEX_CPU *cpu)
         }  
 
     }
+
+        print_stage_content_iq_entry('jbu2', &cpu->jbu2.iq_entry, FALSE);
 }
 
 static int
@@ -1539,6 +1576,9 @@ void APEX_cpu_run(APEX_CPU *cpu)
         intfu(cpu);
         decode_stage(cpu);
         APEX_fetch(cpu);
+
+
+        // print_stage_content("Decode/RF", &cpu->decode, FALSE);
 
         if (cpu->single_step)
         {
